@@ -29,6 +29,7 @@
 #include <map>
 #include <atomic>
 #include <csignal>
+#include <ctime>
 #include <mutex>
 #include <syslog.h>
 
@@ -65,6 +66,11 @@ int backendId;
 int targetId;
 int rate;
 
+// flags related to mood monitoring
+int angry_timeout;
+bool prev_angry = false;
+clock_t begin_angry, end_angry;
+
 // flag to control background threads
 atomic<bool> keepRunning(true);
 
@@ -77,12 +83,17 @@ const string topic = "machine/safety";
 // WorkerInfo contains information about machine operator
 struct WorkerInfo
 {
-    bool looking;
+    bool watching;
     bool angry;
+    bool alert;
 };
 
 // currentInfo contains the latest WorkerInfo tracked by the application.
-WorkerInfo currentInfo;
+WorkerInfo currentInfo = {
+  false,
+  false,
+  false,
+};
 
 // nextImage provides queue for captured video frames
 queue<Mat> nextImage;
@@ -90,7 +101,7 @@ String currentPerf;
 
 mutex m, m1, m2;
 
-// TODO: configure time limit for ANGRY and LOOKING
+// TODO: configure time limit for ANGRY and watching
 const char* keys =
     "{ help  h     | | Print help message. }"
     "{ device d    | 0 | camera device number. }"
@@ -111,7 +122,8 @@ const char* keys =
                         "1: OpenCL, "
                         "2: OpenCL fp16 (half-float precision), "
                         "3: VPU }"
-    "{ rate r      | 1 | number of seconds between data updates to MQTT server. }";
+    "{ rate r      | 1 | number of seconds between data updates to MQTT server. }"
+    "{ angry a     | 5 | number of seconds during which the operator has been angrily operating the machine. }";
 
 
 // nextImageAvailable returns the next image from the queue in a thread-safe way
@@ -123,6 +135,7 @@ Mat nextImageAvailable() {
         nextImage.pop();
     }
     m.unlock();
+
     return rtn;
 }
 
@@ -137,30 +150,27 @@ void addImage(Mat img) {
 
 // getCurrentInfo returns the most-recent WorkerInfo for the application.
 WorkerInfo getCurrentInfo() {
-    WorkerInfo rtn;
     m2.lock();
+    WorkerInfo rtn;
     rtn = currentInfo;
     m2.unlock();
+
     return rtn;
 }
 
 // updateInfo uppdates the current WorkerInfo for the application to the latest detected values
 void updateInfo(WorkerInfo info) {
     m2.lock();
-    if (currentInfo.looking != info.looking) {
-        currentInfo.looking = info.looking;
-    }
-
-    if (currentInfo.angry != info.angry) {
-        currentInfo.angry = info.angry;
-    }
+    currentInfo.watching = info.watching;
+    currentInfo.angry = info.angry;
+    currentInfo.alert = info.alert;
     m2.unlock();
 }
 
 // resetInfo resets the current WorkerInfo for the application.
 void resetInfo() {
     m2.lock();
-    currentInfo.looking = false;
+    currentInfo.watching = false;
     currentInfo.angry = false;
     m2.unlock();
 }
@@ -171,6 +181,7 @@ string getCurrentPerf() {
     m1.lock();
     rtn = currentPerf;
     m1.unlock();
+
     return rtn;
 }
 
@@ -202,7 +213,7 @@ void savePerformanceInfo() {
 void publishMQTTMessage(const string& topic, const WorkerInfo& info)
 {
     ostringstream s;
-    s << "{\"looking\": \"" << info.looking << "\",";
+    s << "{\"watching\": \"" << info.watching << "\",";
     s << "\"angry\": \"" << info.angry << "\"}";
     string payload = s.str();
 
@@ -235,9 +246,10 @@ void frameRunner() {
 
             // get faces
             vector<Rect> faces;
-            float* data = (float*)prob.data;
-            bool looking = false;
+            // machine operator flags
+            bool watching = false;
             bool angry = false;
+            float* data = (float*)prob.data;
             for (size_t i = 0; i < prob.total(); i += 7)
             {
                 float confidence = data[i + 2];
@@ -254,7 +266,7 @@ void frameRunner() {
                 }
             }
 
-            // detect if the operator is looking at the machine
+            // detect if the operator is watching at the machine
             for(auto const& r: faces) {
                 // make sure the face rect is completely inside the main Mat
                 if ((r & Rect(0, 0, next.cols, next.rows)) != r) {
@@ -280,29 +292,46 @@ void frameRunner() {
                 Mat prob = moodnet.forward();
                 moodChecked = true;
 
-                // the operator is looking if their head is tilted within a 45 degree angle relative to the shelf
+                // the operator is watching if their head is tilted within a 45 degree angle relative to the shelf
                 if ( (outs[0].at<float>(0) > -22.5) && (outs[0].at<float>(0) < 22.5) &&
                      (outs[1].at<float>(0) > -22.5) && (outs[1].at<float>(0) < 22.5) ) {
-                     looking = true;
+                     watching = true;
                 }
 
-                if (looking) {
+                if (watching) {
                     // flatten the result from [1, 5, 1, 1] to [1, 5]
                     Mat flat = prob.reshape(1, 5);
-                    // Find the max in returned list of sentiments
+                    // Find the max in returned list of moods
                     Point maxLoc;
-                    double confidence;
-                    minMaxLoc(flat, 0, &confidence, 0, &maxLoc);
+                    minMaxLoc(flat, 0, 0, 0, &maxLoc);
                     if (maxLoc.y == 4) {
-                            angry = true;
+                        angry = true;
+                        if (!prev_angry) {
+                            // start angry watching timer
+                            begin_angry = clock();
+                        }
                     }
                 }
             }
 
             // operator data
             WorkerInfo info;
-            info.looking = looking;
+            info.watching = watching;
             info.angry = angry;
+            info.alert = false;
+            // remember previous angry state
+            prev_angry = angry;
+
+            if (watching && angry) {
+                end_angry = clock();
+                double elapsed_secs = double(end_angry - begin_angry) / CLOCKS_PER_SEC;
+                if (elapsed_secs > static_cast<double>(angry_timeout)) {
+                    info.alert = true;
+                } else {
+                    info.alert = false;
+                }
+            }
+
             updateInfo(info);
 
             savePerformanceInfo();
@@ -312,21 +341,11 @@ void frameRunner() {
     cout << "Video processing thread stopped" << endl;
 }
 
-// publishInfo publishes current workerInfo to MQTT topic queue and then resets it
-void publishAndResetCurrentInfo()
-{
-    m2.lock();
-    WorkerInfo rtn = currentInfo;
-    publishMQTTMessage(topic, rtn);
-    currentInfo.looking = false;
-    currentInfo.angry = false;
-    m2.unlock();
-}
-
 // Function called by worker thread to handle MQTT updates. Pauses for rate second(s) between updates.
 void messageRunner() {
     while (keepRunning.load()) {
-        publishAndResetCurrentInfo();
+        WorkerInfo info = getCurrentInfo();
+        publishMQTTMessage(topic, info);
         this_thread::sleep_for(chrono::seconds(rate));
     }
 
@@ -351,6 +370,7 @@ int main(int argc, char** argv)
     if (argc == 1 || parser.has("help"))
     {
         parser.printMessage();
+
         return 0;
     }
 
@@ -359,6 +379,8 @@ int main(int argc, char** argv)
     backendId = parser.get<int>("backend");
     targetId = parser.get<int>("target");
     rate = parser.get<int>("rate");
+
+    angry_timeout = parser.get<int>("angry");
 
     moodmodel = parser.get<String>("moodmodel");
     moodconfig = parser.get<String>("moodconfig");
@@ -430,18 +452,18 @@ int main(int argc, char** argv)
         putText(frame, label, Point(0, 15), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 0, 0));
 
         WorkerInfo info = getCurrentInfo();
-        label = format("Looking: %d, Angry: %d", info.looking, info.angry);
+        label = format("Watching: %d, Angry: %d", info.watching, info.angry);
         putText(frame, label, Point(0, 40), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 0, 0));
 
-        if (!info.looking) {
+        if (!info.watching) {
             string warning;
-            warning = format("OPERATOR NOT LOOKING AT THE MACHINE!");
+            warning = format("Operator not watching machine: PAUSE MACHINE");
             putText(frame, warning, Point(0, 80), FONT_HERSHEY_SIMPLEX, 0.5, CV_RGB(255, 0, 0), 2);
         }
 
-        if (info.looking && info.angry) {
+        if (info.alert) {
             string warning;
-            warning = format("OPERATOR LOOKING ANGRY AT THE MACHINE!");
+            warning = format("Operator angry at the machine: PAUSE MACHINE");
             putText(frame, warning, Point(0, 80), FONT_HERSHEY_SIMPLEX, 0.5, CV_RGB(255, 0, 0), 2);
         }
 

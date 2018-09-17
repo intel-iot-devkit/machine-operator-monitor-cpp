@@ -249,6 +249,7 @@ void frameRunner() {
             // machine operator flags
             bool watching = false;
             bool angry = false;
+            bool alert = false;
             float* data = (float*)prob.data;
             for (size_t i = 0; i < prob.total(); i += 7)
             {
@@ -306,8 +307,8 @@ void frameRunner() {
                     minMaxLoc(flat, 0, 0, 0, &maxLoc);
                     if (maxLoc.y == 4) {
                         angry = true;
+                        // if the operator wasn't angry before restart timer
                         if (!prev_angry) {
-                            // start angry watching timer
                             begin_angry = clock();
                         }
                     }
@@ -318,23 +319,21 @@ void frameRunner() {
             WorkerInfo info;
             info.watching = watching;
             info.angry = angry;
-            info.alert = false;
-            // remember previous angry state
-            prev_angry = angry;
+            info.alert = alert;
 
             if (watching && angry) {
                 end_angry = clock();
                 double elapsed_secs = double(end_angry - begin_angry) / CLOCKS_PER_SEC;
                 if (elapsed_secs > static_cast<double>(angry_timeout)) {
                     info.alert = true;
-                } else {
-                    info.alert = false;
                 }
             }
 
             updateInfo(info);
-
             savePerformanceInfo();
+
+            // remember previous angry
+            prev_angry = angry;
         }
     }
 

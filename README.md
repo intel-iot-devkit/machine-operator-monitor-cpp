@@ -1,4 +1,4 @@
-# Shopper Sentiment Monitor
+# Machine Safety Monitor
 
 | Details            |              |
 |-----------------------|---------------|
@@ -10,7 +10,7 @@
 
 ## Introduction
 
-This machine operator safet application is one of a series of reference implementations for Computer Vision (CV) using the OpenVINO™ toolkit. This application is designed for a machine mounted camera system that monitors if the operator is looking at the machine and if his emotional state is detected as angry. It sends an alert if either the operator is not watching the machine while it is in operation and if their emotional state is angry and this states lasts for longer than a user-defined period of time.
+This machine operator safety application is one of a series of reference implementations for Computer Vision (CV) using the OpenVINO™ toolkit. This application is designed for a machine mounted camera system that monitors if the operator is looking at the machine and if his emotional state is detected as angry. It sends an alert if either the operator is not watching the machine while it is in operation and if their emotional state is angry and this states lasts for longer than a user-defined period of time.
 
 This example is intended to demonstrate how to ensure the machine operator safety.
 

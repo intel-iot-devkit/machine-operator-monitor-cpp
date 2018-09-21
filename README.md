@@ -1,4 +1,4 @@
-# Machine Safety Monitor
+# Machine Operator Monitor
 
 | Details            |              |
 |-----------------------|---------------|
@@ -10,7 +10,7 @@
 
 ## Introduction
 
-This machine operator safety application is one of a series of reference implementations for Computer Vision (CV) using the OpenVINO™ toolkit. This application is designed for a machine mounted camera system that monitors if the operator is looking at the machine and if his emotional state is detected as angry. It sends an alert if either the operator is not watching the machine while it is in operation and if their emotional state is angry and this states lasts for longer than a user-defined period of time.
+This machine operator monitor application is one of a series of reference implementations for Computer Vision (CV) using the OpenVINO™ toolkit. This application is designed for a machine mounted camera system that monitors if the operator is looking at the machine and if his emotional state is detected as angry. It sends an alert if either the operator is not watching the machine while it is in operation and if their emotional state is angry and this states lasts for longer than a user-defined period of time.
 
 This example is intended to demonstrate how to ensure the machine operator safety.
 
@@ -42,7 +42,7 @@ The application uses a video source, such as a camera, to grab frames, and then 
 
 The second neural network is then used to determine if the machine operator is watching the machine i.e. if the operator's head is facing towards the camera.
 
-Finally, the third neural network is then used to determine the emotion for the detected operator face if the operator is waching the machine.
+Finally, the third neural network is then used to determine the emotion for the detected operator face if the operator is watching the machine.
 
 The data can then optionally be sent to a MQTT machine to machine messaging server, as part of a industrial data analytics system.
 
@@ -73,7 +73,7 @@ You must configure the environment to use the OpenVINO™ toolkit one time per s
 
 Start by changing the current directory to wherever you have git cloned the application code. For example:
 ```
-    cd machine-safety-monitor
+    cd machine-operator-monitor
 ```
 
 If you do not yet have a `build` directory create one:
@@ -122,7 +122,7 @@ To run the code using 16-bit floats, you have to both set the `-t` flag to use t
 
 ## Sample videos
 
-There are several videos available to use as sample videos to show the capabilities of this application. You can download them by running these commands from the `shopper-gaze-monitor` directory:
+There are several videos available to use as sample videos to show the capabilities of this application. You can download them by running these commands from the `machine-operator-monitor` directory:
 ```
     mkdir resources
     cd resources
@@ -131,7 +131,7 @@ There are several videos available to use as sample videos to show the capabilit
     cd ..
 ```
 
-To then execute the code using one of these sample videos, run the following commands from the `shopper-gaze-monitor` directory:
+To then execute the code using one of these sample videos, run the following commands from the `machine-operator-monitor` directory:
 ```
     cd build
     ./monitor -m=/opt/intel/computer_vision_sdk/deployment_tools/intel_models/face-detection-adas-0001/FP32/face-detection-adas-0001.bin -c=/opt/intel/computer_vision_sdk/deployment_tools/intel_models/face-detection-adas-0001/FP32/face-detection-adas-0001.xml -mm=/opt/intel/computer_vision_sdk/deployment_tools/intel_models/emotions-recognition-retail-0003/FP32/emotions-recognition-retail-0003.bin -mc=/opt/intel/computer_vision_sdk/deployment_tools/intel_models/emotions-recognition-retail-0003/FP32/emotions-recognition-retail-0003.xml -pm=/opt/intel/computer_vision_sdk/deployment_tools/intel_models/head-pose-estimation-adas-0001/FP32/head-pose-estimation-adas-0001.bin -pc=/opt/intel/computer_vision_sdk/deployment_tools/intel_models/head-pose-estimation-adas-0001/FP32/head-pose-estimation-adas-0001.xml -i=../resources/face-demographics-walking-and-pause.mp4
@@ -149,5 +149,5 @@ Change the `MQTT_SERVER` to a value that matches the MQTT server you are connect
 
 You should change the `MQTT_CLIENT_ID` to a unique value for each monitoring station, so you can track the data for individual locations. For example:
 ```
-    export MQTT_CLIENT_ID=shelf1337
+    export MQTT_CLIENT_ID=machine1337
 ```

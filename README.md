@@ -73,7 +73,7 @@ You must configure the environment to use the OpenVINO™ toolkit one time per s
 
 Start by changing the current directory to wherever you have git cloned the application code. For example:
 ```
-    cd machine-operator-monitor
+    cd machine-operator-monitor-cpp
 ```
 
 If you do not yet have a `build` directory create one:
@@ -131,7 +131,7 @@ There are several videos available to use as sample videos to show the capabilit
     cd ..
 ```
 
-To then execute the code using one of these sample videos, run the following commands from the `machine-operator-monitor` directory:
+To then execute the code using one of these sample videos, run the following commands from the `machine-operator-monitor-cpp` directory:
 ```
     cd build
     ./monitor -m=/opt/intel/computer_vision_sdk/deployment_tools/intel_models/face-detection-adas-0001/FP32/face-detection-adas-0001.bin -c=/opt/intel/computer_vision_sdk/deployment_tools/intel_models/face-detection-adas-0001/FP32/face-detection-adas-0001.xml -mm=/opt/intel/computer_vision_sdk/deployment_tools/intel_models/emotions-recognition-retail-0003/FP32/emotions-recognition-retail-0003.bin -mc=/opt/intel/computer_vision_sdk/deployment_tools/intel_models/emotions-recognition-retail-0003/FP32/emotions-recognition-retail-0003.xml -pm=/opt/intel/computer_vision_sdk/deployment_tools/intel_models/head-pose-estimation-adas-0001/FP32/head-pose-estimation-adas-0001.bin -pc=/opt/intel/computer_vision_sdk/deployment_tools/intel_models/head-pose-estimation-adas-0001/FP32/head-pose-estimation-adas-0001.xml -i=../resources/face-demographics-walking-and-pause.mp4

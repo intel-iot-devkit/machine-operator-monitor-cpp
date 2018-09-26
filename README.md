@@ -151,3 +151,8 @@ You should change the `MQTT_CLIENT_ID` to a unique value for each monitoring sta
 ```
     export MQTT_CLIENT_ID=machine1337
 ```
+
+If you want to monitor the MQTT messages sent to your local server, and you have the `mosquitto` client utilities installed, you can run the following command:
+```
+mosquitto_sub -t 'machine/safety'
+```

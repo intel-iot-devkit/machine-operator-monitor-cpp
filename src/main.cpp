@@ -58,14 +58,15 @@ bool poseChecked = false;
 // application parameters
 String model;
 String config;
-String moodmodel;
-String moodconfig;
+String sentmodel;
+String sentconfig;
 String posemodel;
 String poseconfig;
 int backendId;
 int targetId;
 int rate;
-float confidenceFactor;
+float confidenceFace;
+float confidenceMood;
 
 // flags related to mood monitoring
 int angry_timeout;
@@ -109,9 +110,10 @@ const char* keys =
     "{ input i     | | Path to input image or video file. Skip this argument to capture frames from a camera. }"
     "{ model m     | | Path to .bin file of model containing face recognizer. }"
     "{ config c    | | Path to .xml file of model containing network configuration. }"
-    "{ factor f    | 0.5 | Confidence factor required. }"
-    "{ moodmodel mm     | | Path to .bin file of mood model. }"
-    "{ moodconfig mc    | | Path to a .xml file of mood model containing network configuration. }"
+    "{ faceconf fc  | 0.5 | Confidence factor for face detection required. }"
+    "{ moodconf mc  | 0.5 | Confidence factor for emotion detection required. }"
+    "{ sentmodel sm     | | Path to .bin file of sentiment model. }"
+    "{ sentconfig sc    | | Path to a .xml file of sentimen model containing network configuration. }"
     "{ posemodel pm     | | Path to .bin file of head pose model. }"
     "{ poseconfig pc    | | Path to a .xml file of head pose model containing network configuration. }"
     "{ backend b    | 0 | Choose one of computation backends: "
@@ -256,7 +258,7 @@ void frameRunner() {
             for (size_t i = 0; i < prob.total(); i += 7)
             {
                 float confidence = data[i + 2];
-                if (confidence > confidenceFactor)
+                if (confidence > confidenceFace)
                 {
                     int left = (int)(data[i + 3] * frame.cols);
                     int top = (int)(data[i + 4] * frame.rows);
@@ -306,12 +308,15 @@ void frameRunner() {
                     Mat flat = prob.reshape(1, 5);
                     // Find the max in returned list of moods
                     Point maxLoc;
-                    minMaxLoc(flat, 0, 0, 0, &maxLoc);
-                    if (maxLoc.y == 4) {
-                        angry = true;
-                        // if the operator wasn't angry before restart timer
-                        if (!prev_angry) {
-                            begin_angry = clock();
+                    double confidence;
+                    minMaxLoc(flat, 0, &confidence, 0, &maxLoc);
+                    if (confidence > static_cast<double>(confidenceMood)) {
+                        if (maxLoc.y == 4) {
+                            angry = true;
+                            // if the operator wasn't angry before restart timer
+                            if (!prev_angry) {
+                                begin_angry = clock();
+                            }
                         }
                     }
                 }
@@ -380,12 +385,13 @@ int main(int argc, char** argv)
     backendId = parser.get<int>("backend");
     targetId = parser.get<int>("target");
     rate = parser.get<int>("rate");
-    confidenceFactor = parser.get<float>("factor");
+    confidenceFace = parser.get<float>("faceconf");
+    confidenceMood = parser.get<float>("moodconf");
 
     angry_timeout = parser.get<int>("angry");
 
-    moodmodel = parser.get<String>("moodmodel");
-    moodconfig = parser.get<String>("moodconfig");
+    sentmodel = parser.get<String>("sentmodel");
+    sentconfig = parser.get<String>("sentconfig");
 
     posemodel = parser.get<String>("posemodel");
     poseconfig = parser.get<String>("poseconfig");
@@ -406,7 +412,7 @@ int main(int argc, char** argv)
     net.setPreferableTarget(targetId);
 
     // open mood model
-    moodnet = readNet(moodmodel, moodconfig);
+    moodnet = readNet(sentmodel, sentconfig);
     moodnet.setPreferableBackend(backendId);
     moodnet.setPreferableTarget(targetId);
 

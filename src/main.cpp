@@ -65,6 +65,7 @@ String poseconfig;
 int backendId;
 int targetId;
 int rate;
+float confidenceFactor;
 
 // flags related to mood monitoring
 int angry_timeout;
@@ -108,6 +109,7 @@ const char* keys =
     "{ input i     | | Path to input image or video file. Skip this argument to capture frames from a camera. }"
     "{ model m     | | Path to .bin file of model containing face recognizer. }"
     "{ config c    | | Path to .xml file of model containing network configuration. }"
+    "{ factor f    | 0.5 | Confidence factor required. }"
     "{ moodmodel mm     | | Path to .bin file of mood model. }"
     "{ moodconfig mc    | | Path to a .xml file of mood model containing network configuration. }"
     "{ posemodel pm     | | Path to .bin file of head pose model. }"
@@ -254,7 +256,7 @@ void frameRunner() {
             for (size_t i = 0; i < prob.total(); i += 7)
             {
                 float confidence = data[i + 2];
-                if (confidence > 0.5)
+                if (confidence > confidenceFactor)
                 {
                     int left = (int)(data[i + 3] * frame.cols);
                     int top = (int)(data[i + 4] * frame.rows);
@@ -378,6 +380,7 @@ int main(int argc, char** argv)
     backendId = parser.get<int>("backend");
     targetId = parser.get<int>("target");
     rate = parser.get<int>("rate");
+    confidenceFactor = parser.get<float>("factor");
 
     angry_timeout = parser.get<int>("angry");
 

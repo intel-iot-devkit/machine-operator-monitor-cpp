@@ -457,11 +457,11 @@ int main(int argc, char** argv)
         addImage(frame);
 
         string label = getCurrentPerf();
-        putText(frame, label, Point(0, 15), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 0, 0));
+        putText(frame, label, Point(0, 15), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(255, 255, 255));
 
         WorkerInfo info = getCurrentInfo();
         label = format("Watching: %d, Angry: %d", info.watching, info.angry);
-        putText(frame, label, Point(0, 40), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 0, 0));
+        putText(frame, label, Point(0, 40), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(255, 255, 255));
 
         if (!info.watching) {
             string warning;
@@ -475,7 +475,7 @@ int main(int argc, char** argv)
             putText(frame, warning, Point(0, 80), FONT_HERSHEY_SIMPLEX, 0.5, CV_RGB(255, 0, 0), 2);
         }
 
-        imshow("Machine Safety Monitor", frame);
+        imshow("Machine Operator Monitor", frame);
 
         if (waitKey(delay) >= 0 || sig_caught) {
             cout << "Attempting to stop background threads" << endl;

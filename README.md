@@ -6,7 +6,7 @@
 | Programming Language: |  C++ |
 | Time to Complete:    |  45 min     |
 
-![app image](./images/machine-safety-monitor.png)
+![app image](./images/machine-operator-monitor.png)
 
 ## Introduction
 

@@ -10,7 +10,7 @@
 
 ## Introduction
 
-This machine operator monitor application is one of a series of reference implementations for Computer Vision (CV) using the OpenVINO™ toolkit. This application is designed for a machine mounted camera system that monitors if the operator is looking at the machine and if his emotional state is detected as angry. It sends an alert if either the operator is not watching the machine while it is in operation and if their emotional state is angry and this combined state lasts for longer than a user-defined period of time.
+This machine operator monitor application is one of a series of reference implementations for Computer Vision (CV) using the Intel® Distribution of OpenVINO™ toolkit. This application is designed for a machine mounted camera system that monitors if the operator is looking at the machine and if his emotional state is detected as angry. It sends an alert if either the operator is not watching the machine while it is in operation and if their emotional state is angry and this combined state lasts for longer than a user-defined period of time.
 
 This example is intended to demonstrate how to ensure the machine operator safety.
 
@@ -26,12 +26,12 @@ This example is intended to demonstrate how to ensure the machine operator safet
 uname -a
 ```
 * OpenCL™ Runtime Package
-* OpenVINO™ toolkit
+* Intel® Distribution of OpenVINO™ toolkit
 
 ## Setup
 
-### Install OpenVINO™ Toolkit
-Refer to https://software.intel.com/en-us/articles/OpenVINO-Install-Linux for more information about how to install and setup the OpenVINO™ toolkit.
+### Install the Intel® Distribution of OpenVINO™ toolkit
+Refer to https://software.intel.com/en-us/articles/OpenVINO-Install-Linux for more information about how to install and setup the Intel® Distribution of OpenVINO™ toolkit.
 
 You will need the OpenCL™ Runtime package if you plan to run inference on the GPU as shown by the
 instructions below. It is not mandatory for CPU inference.
@@ -46,7 +46,7 @@ Finally, the third neural network is then used to determine the emotion for the 
 
 The data can then optionally be sent to a MQTT machine to machine messaging server, as part of a industrial data analytics system.
 
-The DNN models used in this application are Intel® optimized models that are part of the OpenVINO™ toolkit.
+The DNN models used in this application are Intel® optimized models that are part of the Intel® Distribution of OpenVINO™ toolkit.
 
 You can find them here:
 
@@ -64,7 +64,7 @@ The program creates three threads for concurrency:
 
 ## Setting the Build Environment
 
-You must configure the environment to use the OpenVINO™ toolkit one time per session by running the following command:
+You must configure the environment to use the Intel® Distribution of OpenVINO™ toolkit one time per session by running the following command:
 ```
     source /opt/intel/computer_vision_sdk/bin/setupvars.sh
 ```
@@ -109,9 +109,9 @@ The user can choose different confidence levels for both face and emotion detect
 
 ### Hardware acceleration
 
-This application can take advantage of the hardware acceleration in the OpenVINO toolkit by using the `-b` and `-t` parameters.
+This application can take advantage of the hardware acceleration in the Intel® Distribution of OpenVINO™ toolkit by using the `-b` and `-t` parameters.
 
-For example, to use the OpenVINO™ toolkit backend with the GPU in 32-bit mode:
+For example, to use the Intel® Distribution of OpenVINO™ toolkit backend with the GPU in 32-bit mode:
 ```
     ./monitor -m=/opt/intel/computer_vision_sdk/deployment_tools/intel_models/face-detection-adas-0001/FP32/face-detection-adas-0001.bin -c=/opt/intel/computer_vision_sdk/deployment_tools/intel_models/face-detection-adas-0001/FP32/face-detection-adas-0001.xml -sm=/opt/intel/computer_vision_sdk/deployment_tools/intel_models/emotions-recognition-retail-0003/FP32/emotions-recognition-retail-0003.bin -sc=/opt/intel/computer_vision_sdk/deployment_tools/intel_models/emotions-recognition-retail-0003/FP32/emotions-recognition-retail-0003.xml -pm=/opt/intel/computer_vision_sdk/deployment_tools/intel_models/head-pose-estimation-adas-0001/FP32/head-pose-estimation-adas-0001.bin -pc=/opt/intel/computer_vision_sdk/deployment_tools/intel_models/head-pose-estimation-adas-0001/FP32/head-pose-estimation-adas-0001.xml -b=2 -t=1
 ```

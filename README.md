@@ -2,15 +2,15 @@
 
 | Details            |              |
 |-----------------------|---------------|
-| Target OS:            |  Ubuntu\* 16.04 LTS   |
+| Target OS:            |  Ubuntu\* 18.04 LTS   |
 | Programming Language: |  C++ |
 | Time to Complete:    |  45 min     |
 
-![app image](./images/machine-operator-monitor.png)
+![app image](./docs/images/machine-operator-monitor.png)
 
 ## Introduction
 
-This machine operator monitor application is one of a series of reference implementations for Computer Vision (CV) using the Intel® Distribution of OpenVINO™ toolkit. This application is designed for a machine mounted camera system that monitors if the operator is looking at the machine and if his emotional state is detected as angry. It sends an alert if the operator is not watching the machine while it is in operation or if the emotional state of the operator is angry.  It also sends an alert if this combined operator state lasts for longer than a user-defined period of time.
+This application is designed for a machine mounted camera system that monitors if the operator is looking at the machine and if his emotional state is detected as angry. It sends an alert if the operator is not watching the machine while it is in operation or if the emotional state of the operator is angry.  It also sends an alert if this combined operator state lasts for longer than a user-defined period of time.
 
 This reference implementation illustrates an example of machine operator safety monitoring.
 
@@ -20,20 +20,13 @@ This reference implementation illustrates an example of machine operator safety 
 * 6th to 8th Generation Intel® Core™ processors with Intel® Iris® Pro graphics or Intel® HD Graphics
 
 ### Software
-* [Ubuntu\* 16.04 LTS](http://releases.ubuntu.com/16.04/)<br><br>
+* [Ubuntu\* 18.04 LTS](http://releases.ubuntu.com/18.04/)<br><br>
 **Note**: We recommend using a 4.14+ kernel to use this software. Run the following command to determine your kernel version:
     ```
     uname -a
     ```
 * OpenCL™ Runtime Package
-* Intel® Distribution of OpenVINO™ toolkit 2019 R1 Release
-
-## Setup
-
-### Install Intel® Distribution of OpenVINO™ Toolkit
-Refer to [Install the Intel® Distribution of the OpenVINO™ toolkit for Linux*](https://software.intel.com/en-us/articles/OpenVINO-Install-Linux)  for more information about how to install and setup the toolkit.
-
-The software requires the installation of the OpenCL™ Runtime package to run inference on the GPU, as indicated in the following instructions. It is not mandatory for CPU inference.
+* Intel® Distribution of OpenVINO™ toolkit 2020 R3 Release
 
 ## How It Works
 
@@ -46,10 +39,8 @@ Finally, if the proper head position has been detected, the third neural network
 
 The data can then optionally be sent to a MQTT machine to machine messaging server, as part of an industrial data analytics system.
 
-The DNN models can be downloaded using `downloader.py` which is the part of the Intel® Distribution of OpenVINO™ toolkit.
 
-
-![Code organization](./images/arch3.png)
+![Code organization](./docs/images/arch3.png)
 
 The program creates three threads for concurrency:
 
@@ -57,128 +48,153 @@ The program creates three threads for concurrency:
 - Worker thread that processes video frames using the deep neural networks
 - Worker thread that publishes any MQTT messages
 
-## Install the Dependencies
+## Setup
+
+### Get the code
+Clone the reference implementation
+```
+sudo apt-get update && sudo apt-get install git
+git clone https://github.com/intel-iot-devkit/machine-operator-monitor-cpp.git 
+```
+
+### Install Intel® Distribution of OpenVINO™ toolkit
+Refer to https://software.intel.com/en-us/articles/OpenVINO-Install-Linux for more information about how to install and setup the Intel® Distribution of OpenVINO™ toolkit.
+
+You will need the OpenCL™ Runtime package if you plan to run inference on the GPU as shown by the instructions below. It is not mandatory for CPU inference.
+
+### Other dependencies
+#### Mosquitto
+Mosquitto is an open source message broker that implements the MQTT protocol. The MQTT protocol provides a lightweight method of carrying out messaging using a publish/subscribe model.
+
+## Which model to use
+
+This application uses the **face-detection-adas-0001**, **head-pose-estimation-adas-0001** and **emotions-recognition-retail-0003** Intel® model, that can be downloaded using the **model downloader**. The **model downloader** downloads the __.xml__ and __.bin__ files that is used by the application. 
+
+Steps to download **.xml** and **.bin** files:
+
+To download the models and install the dependencies of the application, run the below command in the shopper-gaze-monitor-cpp directory:
+```
+./setup.sh
+```
+
+### The Config File
+
+The _resources/config.json_ contains the path of video that will be used by the application as input.
+
+For example:
+   ```
+   {
+       "inputs": [
+          {
+              "video":"path_to_video/video1.mp4",
+          }
+       ]
+   }
+   ```
+
+The `path/to/video` is the path to an input video file.
+
+### Which Input Video to use
+
+The application works with any input video. Find sample videos for object detection [here](https://github.com/intel-iot-devkit/sample-videos/).
+
+For first-use, we recommend using the [face-demographics-walking-and-pause](https://github.com/intel-iot-devkit/sample-videos/blob/master/head-pose-face-detection-female.mp4) video.
+
+For example:
+   ```
+   {
+       "inputs": [
+          {
+              "video":"sample-videos/head-pose-face-detection-female.mp4",
+          }
+       ]
+   }
+   ```
+If the user wants to use any other video, it can be used by providing the path in the config.json file.
+
+### Using the Camera Stream instead of video
+
+Replace `path/to/video` with the camera ID in the config.json file, where the ID is taken from the video device (the number X in /dev/videoX).
+
+On Ubuntu, to list all available video devices use the following command:
 
 ```
-sudo apt-get install mosquitto mosquitto-clients
+ls /dev/video*
 ```
 
-## Download the model
+For example, if the output of above command is __/dev/video0__, then config.json would be:
 
-This application uses the **face-detection-adas-0001**, **emotions-recognition-retail-0003** and **head-pose-estimation-adas-0001** Intel® model, that can be downloaded using the model downloader. The model downloader downloads the .xml and .bin files that will be used by the application.
+```
+  {
+     "inputs": [
+        {
+           "video":"0"
+        }
+     ]
+   }
+```
 
-Steps to download .xml and .bin files:
-- Go to the **model_downloader** directory using the following command:
-    ```
-    cd /opt/intel/openvino/deployment_tools/tools/model_downloader
-    ```
+### Setting the build environment
 
-- Specify which model to download with __--name__:
-    ```
-    sudo ./downloader.py --name face-detection-adas-0001
-    sudo ./downloader.py --name head-pose-estimation-adas-0001
-    sudo ./downloader.py --name emotions-recognition-retail-0003
-    ```
-- To download the model for FP16, run the following commands:
-    ```
-    sudo ./downloader.py --name face-detection-adas-0001-fp16
-    sudo ./downloader.py --name head-pose-estimation-adas-0001-fp16
-    sudo ./downloader.py --name emotions-recognition-retail-0003-fp16
-    ```
+Configure the environment to use the Intel® Distribution of OpenVINO™ toolkit by exporting environment variables:
 
- The files will be downloaded inside the following directories respectively:  
- ```
-/opt/intel/openvino/deployment_tools/tools/model_downloader/Transportation/object_detection/face/pruned_mobilenet_reduced_ssd_shared_weights/dldt/
-/opt/intel/openvino/deployment_tools/tools/model_downloader/Retail/object_attributes/emotions_recognition/0003/dldt/ 
-/opt/intel/openvino/deployment_tools/tools/model_downloader/Transportation/object_attributes/headpose/vanilla_cnn/dldt/ 
- ```
-
-
-
-## Set the Build Environment
-
-Configure the environment to use the Intel® Distribution of OpenVINO™ toolkit one time per session by running the following command:
 ```
 source /opt/intel/openvino/bin/setupvars.sh
 ```
 
-## Build the Code
+__Note__: This command needs to be executed only once in the terminal where the application will be executed. If the terminal is closed, the command needs to be executed again.
 
-Go to `machine-operator-monitor-cpp` directory and build the application:
+## Build the Application
+
+To build , go to the shopper-mood-monitor-cpp and run the following commands:
+
 ```
-mkdir -p build && cd build
+mkdir -p build
+cd build
 cmake ..
 make
 ```
 
-## Running the Code
+## Run the Application
 
 To see a list of the various options:
 ```
 ./monitor -h
 ```
 
-To run the application with the needed models using the webcam:
-```
-./monitor -m=/opt/intel/openvino/deployment_tools/tools/model_downloader/Transportation/object_detection/face/pruned_mobilenet_reduced_ssd_shared_weights/dldt/face-detection-adas-0001.bin -c=/opt/intel/openvino/deployment_tools/tools/model_downloader/Transportation/object_detection/face/pruned_mobilenet_reduced_ssd_shared_weights/dldt/face-detection-adas-0001.xml -sm=/opt/intel/openvino/deployment_tools/tools/model_downloader/Retail/object_attributes/emotions_recognition/0003/dldt/emotions-recognition-retail-0003.bin -sc=/opt/intel/openvino/deployment_tools/tools/model_downloader/Retail/object_attributes/emotions_recognition/0003/dldt/emotions-recognition-retail-0003.xml -pm=/opt/intel/openvino/deployment_tools/tools/model_downloader/Transportation/object_attributes/headpose/vanilla_cnn/dldt/head-pose-estimation-adas-0001.bin -pc=/opt/intel/openvino/deployment_tools/tools/model_downloader/Transportation/object_attributes/headpose/vanilla_cnn/dldt/head-pose-estimation-adas-0001.xml
-```
-The user can choose different confidence levels for both face and emotion detection by using `--faceconf or -f,` and `--moodconf or -mc` command line parameters respectively. By default, both of these parameters are set to `0.5` (i.e., at least `50%` detection confidence is required in order for the returned inference result to be considered valid).
+A user can specify what target device to run on by using the device command-line argument -d. If no target device is specified the application will run on the CPU by default.
 
-### Hardware acceleration
+### Run on the CPU
 
-This application can leverage hardware acceleration in the Intel® Distribution of OpenVINO™ toolkit by using the `-b` and `-t` parameters.
-
-For example, to use the Intel® Distribution of OpenVINO™ toolkit backend with the GPU in 32-bit mode:
-```
-./monitor -m=/opt/intel/openvino/deployment_tools/tools/model_downloader/Transportation/object_detection/face/pruned_mobilenet_reduced_ssd_shared_weights/dldt/face-detection-adas-0001.bin -c=/opt/intel/openvino/deployment_tools/tools/model_downloader/Transportation/object_detection/face/pruned_mobilenet_reduced_ssd_shared_weights/dldt/face-detection-adas-0001.xml -sm=/opt/intel/openvino/deployment_tools/tools/model_downloader/Retail/object_attributes/emotions_recognition/0003/dldt/emotions-recognition-retail-0003.bin -sc=/opt/intel/openvino/deployment_tools/tools/model_downloader/Retail/object_attributes/emotions_recognition/0003/dldt/emotions-recognition-retail-0003.xml -pm=/opt/intel/openvino/deployment_tools/tools/model_downloader/Transportation/object_attributes/headpose/vanilla_cnn/dldt/head-pose-estimation-adas-0001.bin -pc=/opt/intel/openvino/deployment_tools/tools/model_downloader/Transportation/object_attributes/headpose/vanilla_cnn/dldt/head-pose-estimation-adas-0001.xml -b=2 -t=1
-```
-
-To run the code using 16-bit floats, set the `-t` flag to use the GPU in 16-bit mode, as well as use the FP16 version of the Intel® models:
-```
-./monitor -m=/opt/intel/openvino/deployment_tools/tools/model_downloader/Transportation/object_detection/face/pruned_mobilenet_reduced_ssd_shared_weights/dldt/face-detection-adas-0001-fp16.bin -c=/opt/intel/openvino/deployment_tools/tools/model_downloader/Transportation/object_detection/face/pruned_mobilenet_reduced_ssd_shared_weights/dldt/face-detection-adas-0001-fp16.xml -sm=/opt/intel/openvino/deployment_tools/tools/model_downloader/Retail/object_attributes/emotions_recognition/0003/dldt/emotions-recognition-retail-0003-fp16.bin -sc=/opt/intel/openvino/deployment_tools/tools/model_downloader/Retail/object_attributes/emotions_recognition/0003/dldt/emotions-recognition-retail-0003-fp16.xml -pm=/opt/intel/openvino/deployment_tools/tools/model_downloader/Transportation/object_attributes/headpose/vanilla_cnn/dldt/head-pose-estimation-adas-0001-fp16.bin -pc=/opt/intel/openvino/deployment_tools/tools/model_downloader/Transportation/object_attributes/headpose/vanilla_cnn/dldt/head-pose-estimation-adas-0001-fp16.xml -b=2 -t=2
-```
-
-To run the code using the VPU, set the `-t` flag to `3` and use the 16-bit FP16 version of the Intel® models:
-```
-./monitor -m=/opt/intel/openvino/deployment_tools/tools/model_downloader/Transportation/object_detection/face/pruned_mobilenet_reduced_ssd_shared_weights/dldt/face-detection-adas-0001-fp16.bin -c=/opt/intel/openvino/deployment_tools/tools/model_downloader/Transportation/object_detection/face/pruned_mobilenet_reduced_ssd_shared_weights/dldt/face-detection-adas-0001-fp16.xml -sm=/opt/intel/openvino/deployment_tools/tools/model_downloader/Retail/object_attributes/emotions_recognition/0003/dldt/emotions-recognition-retail-0003-fp16.bin -sc=/opt/intel/openvino/deployment_tools/tools/model_downloader/Retail/object_attributes/emotions_recognition/0003/dldt/emotions-recognition-retail-0003-fp16.xml -pm=/opt/intel/openvino/deployment_tools/tools/model_downloader/Transportation/object_attributes/headpose/vanilla_cnn/dldt/head-pose-estimation-adas-0001-fp16.bin -pc=/opt/intel/openvino/deployment_tools/tools/model_downloader/Transportation/object_attributes/headpose/vanilla_cnn/dldt/head-pose-estimation-adas-0001-fp16.xml -b=2 -t=3
-```
-#### Run the application on FPGA:
-
-Before running the application on the FPGA, program the AOCX (bitstream) file.
-Use the setup_env.sh script from [fpga_support_files.tgz](http://registrationcenter-download.intel.com/akdlm/irc_nas/12954/fpga_support_files.tgz) to set the environment variables.<br>
+Although the application runs on the CPU by default, this can also be explicitly specified through the -d CPU command-line argument:
 
 ```
-source /home/<user>/Downloads/fpga_support_files/setup_env.sh
+./monitor -m=/opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/intel/face-detection-adas-0001/FP32/face-detection-adas-0001.bin -c=/opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/intel/face-detection-adas-0001/FP32/face-detection-adas-0001.xml -pm=/opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/intel/head-pose-estimation-adas-0001/FP32/head-pose-estimation-adas-0001.bin -pc=/opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/intel/head-pose-estimation-adas-0001/FP32/head-pose-estimation-adas-0001.xml -sm=/opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/intel/head-pose-estimation-adas-0001/FP32/head-pose-estimation-adas-0001.bin -sc=/opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/intel/head-pose-estimation-adas-0001/FP32/head-pose-estimation-adas-0001.xml
 ```
 
-The bitstreams for HDDL-F can be found under the `/opt/intel/openvino/bitstreams/a10_vision_design_bitstreams` folder. To program the bitstream use the below command:
-```
-aocl program acl0 /opt/intel/openvino/bitstreams/a10_vision_design_bitstreams/2019R1_PL1_FP11_MobileNet_Clamp.aocx
-```
+The user can choose different confidence levels for both face and emotion detection by using `--faceconf, -fc` and `--moodconf, -mc` command line parameters. By default both of these parameters are set to `0.5` i.e. at least `50%` detection confidence is required in order for the returned inference result to be considered valid.
 
-For more information on programming the bitstreams, please refer to https://software.intel.com/en-us/articles/OpenVINO-Install-Linux-FPGA#inpage-nav-11
+### Running on the GPU
 
-To run the code using the FPGA, you have to set the `-t` flag to `5`:
+- To run on the GPU in 32-bit mode, use the following command:
 ```
-./monitor -m=/opt/intel/openvino/deployment_tools/tools/model_downloader/Transportation/object_detection/face/pruned_mobilenet_reduced_ssd_shared_weights/dldt/face-detection-adas-0001-fp16.bin -c=/opt/intel/openvino/deployment_tools/tools/model_downloader/Transportation/object_detection/face/pruned_mobilenet_reduced_ssd_shared_weights/dldt/face-detection-adas-0001-fp16.xml -sm=/opt/intel/openvino/deployment_tools/tools/model_downloader/Retail/object_attributes/emotions_recognition/0003/dldt/emotions-recognition-retail-0003-fp16.bin -sc=/opt/intel/openvino/deployment_tools/tools/model_downloader/Retail/object_attributes/emotions_recognition/0003/dldt/emotions-recognition-retail-0003-fp16.xml -pm=/opt/intel/openvino/deployment_tools/tools/model_downloader/Transportation/object_attributes/headpose/vanilla_cnn/dldt/head-pose-estimation-adas-0001-fp16.bin -pc=/opt/intel/openvino/deployment_tools/tools/model_downloader/Transportation/object_attributes/headpose/vanilla_cnn/dldt/head-pose-estimation-adas-0001-fp16.xml -b=2 -t=5
+./monitor -m=/opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/intel/face-detection-adas-0001/FP32/face-detection-adas-0001.bin -c=/opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/intel/face-detection-adas-0001/FP32/face-detection-adas-0001.xml -pm=/opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/intel/head-pose-estimation-adas-0001/FP32/head-pose-estimation-adas-0001.bin -pc=/opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/intel/head-pose-estimation-adas-0001/FP32/head-pose-estimation-adas-0001.xml -sm=/opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/intel/head-pose-estimation-adas-0001/FP32/head-pose-estimation-adas-0001.bin -sc=/opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/intel/head-pose-estimation-adas-0001/FP32/head-pose-estimation-adas-0001.xml -b=2 -t=1
 ```
+   **FP32**: FP32 is single-precision floating-point arithmetic uses 32 bits to represent numbers. 8 bits for the magnitude and 23 bits for the precision. For more information, [click here](https://en.wikipedia.org/wiki/Single-precision_floating-point_format)<br>
 
-## Sample Videos
+- To run on the GPU in 16-bit mode, use the following command:
+```
+./monitor -m=/opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/intel/face-detection-adas-0001/FP16/face-detection-adas-0001.bin -c=/opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/intel/face-detection-adas-0001/FP16/face-detection-adas-0001.xml -pm=/opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/intel/head-pose-estimation-adas-0001/FP16/head-pose-estimation-adas-0001.bin -pc=/opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/intel/head-pose-estimation-adas-0001/FP16/head-pose-estimation-adas-0001.xml -sm=/opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/intel/head-pose-estimation-adas-0001/FP16/head-pose-estimation-adas-0001.bin -sc=/opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/intel/head-pose-estimation-adas-0001/FP16/head-pose-estimation-adas-0001.xml -b=2 -t=2
+```
+   **FP16**: FP16 is half-precision floating-point arithmetic uses 16 bits. 5 bits for the magnitude and 10 bits for the precision. For more information, [click here](https://en.wikipedia.org/wiki/Half-precision_floating-point_format) 
 
-There are several sample videos that can be used to demonstrate the capabilities of this application. Download them by running these commands from the `machine-operator-monitor-cpp` directory:
-```
-mkdir resources
-cd resources
-wget https://github.com/intel-iot-devkit/sample-videos/raw/master/head-pose-face-detection-female.mp4
-wget https://github.com/intel-iot-devkit/sample-videos/raw/master/head-pose-face-detection-male.mp4
-cd ..
-```
+### Running on the Intel® Movidius™ VPU
 
-To execute the code using one of these sample videos, run the following commands from the `machine-operator-monitor-cpp` directory:
 ```
-cd build
-./monitor -m=/opt/intel/openvino/deployment_tools/tools/model_downloader/Transportation/object_detection/face/pruned_mobilenet_reduced_ssd_shared_weights/dldt/face-detection-adas-0001.bin -c=/opt/intel/openvino/deployment_tools/tools/model_downloader/Transportation/object_detection/face/pruned_mobilenet_reduced_ssd_shared_weights/dldt/face-detection-adas-0001.xml -sm=/opt/intel/openvino/deployment_tools/tools/model_downloader/Retail/object_attributes/emotions_recognition/0003/dldt/emotions-recognition-retail-0003.bin -sc=/opt/intel/openvino/deployment_tools/tools/model_downloader/Retail/object_attributes/emotions_recognition/0003/dldt/emotions-recognition-retail-0003.xml -pm=/opt/intel/openvino/deployment_tools/tools/model_downloader/Transportation/object_attributes/headpose/vanilla_cnn/dldt/head-pose-estimation-adas-0001.bin -pc=/opt/intel/openvino/deployment_tools/tools/model_downloader/Transportation/object_attributes/headpose/vanilla_cnn/dldt/head-pose-estimation-adas-0001.xml -i=../resources/head-pose-face-detection-female.mp4
+./monitor -m=/opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/intel/face-detection-adas-0001/FP16/face-detection-adas-0001.bin -c=/opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/intel/face-detection-adas-0001/FP16/face-detection-adas-0001.xml -pm=/opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/intel/head-pose-estimation-adas-0001/FP16/head-pose-estimation-adas-0001.bin -pc=/opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/intel/head-pose-estimation-adas-0001/FP16/head-pose-estimation-adas-0001.xml -sm=/opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/intel/head-pose-estimation-adas-0001/FP16/head-pose-estimation-adas-0001.bin -sc=/opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/intel/head-pose-estimation-adas-0001/FP16/head-pose-estimation-adas-0001.xml -b=2 -t=3
 ```
+**Note:** The Intel® Movidius™ VPU can only run FP16 models. The model that is passed to the application, through the `-m=<path_to_model>` command-line argument, must be of data type FP16.
+
 
 ### Machine to Machine Messaging with MQTT
 

@@ -54,7 +54,7 @@ The program creates three threads for concurrency:
 Clone the reference implementation
 ```
 sudo apt-get update && sudo apt-get install git
-git clone https://github.com/intel-iot-devkit/machine-operator-monitor-cpp.git 
+git clone https://gitlab.devtools.intel.com/reference-implementations/shopper-gaze-monitor-cpp
 ```
 
 ### Install Intel® Distribution of OpenVINO™ toolkit
@@ -187,6 +187,8 @@ The user can choose different confidence levels for both face and emotion detect
 ./monitor -m=/opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/intel/face-detection-adas-0001/FP16/face-detection-adas-0001.bin -c=/opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/intel/face-detection-adas-0001/FP16/face-detection-adas-0001.xml -pm=/opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/intel/head-pose-estimation-adas-0001/FP16/head-pose-estimation-adas-0001.bin -pc=/opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/intel/head-pose-estimation-adas-0001/FP16/head-pose-estimation-adas-0001.xml -sm=/opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/intel/head-pose-estimation-adas-0001/FP16/head-pose-estimation-adas-0001.bin -sc=/opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/intel/head-pose-estimation-adas-0001/FP16/head-pose-estimation-adas-0001.xml -b=2 -t=2
 ```
    **FP16**: FP16 is half-precision floating-point arithmetic uses 16 bits. 5 bits for the magnitude and 10 bits for the precision. For more information, [click here](https://en.wikipedia.org/wiki/Half-precision_floating-point_format) 
+
+**Note:** The Model Loading Time for GPU is quite long. So to observe the inference for GPU, please try to use longer duration videos.
 
 ### Running on the Intel® Movidius™ VPU
 

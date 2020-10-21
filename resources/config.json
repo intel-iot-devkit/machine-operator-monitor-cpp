@@ -1,0 +1,8 @@
+{
+   "inputs":[
+      {
+         "video":"../resources/head-pose-face-detection-female.mp4"
+      }
+   ]
+}
+

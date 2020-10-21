@@ -54,7 +54,7 @@ The program creates three threads for concurrency:
 Clone the reference implementation
 ```
 sudo apt-get update && sudo apt-get install git
-git clone https://gitlab.devtools.intel.com/reference-implementations/shopper-gaze-monitor-cpp
+git clone https://github.com/intel-iot-devkit/machine-operator-monitor-cpp.git 
 ```
 
 ### Install Intel® Distribution of OpenVINO™ toolkit
